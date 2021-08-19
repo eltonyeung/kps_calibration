@@ -1,6 +1,7 @@
 %% Config
 subject_ID = 'Pilot3_louis'
 
+% Import kps data file
 kps_kinect = readtable(strcat('D:\SmartRehab\Data_Keypoints\', subject_ID , '_Kinect_keypts.xlsx'));
 kps_phone = readtable(strcat('D:\SmartRehab\Data_Keypoints\', subject_ID, '_phone(mediapipe)_kps.xlsx'));
 
@@ -9,39 +10,41 @@ kps_phone.Properties.VariableNames{'idx'} = 'time';
 kps_phone.time = kps_phone.time/30; % convert frame# to seconds (30fps)
 kps_phone{:,2:27} = -kps_phone{:,2:27};
 
+% Flip along y-axis to mirror to real-world
+kps_kinect{:,2:2:26} = -kps_kinect{:,2:2:26};
+kps_phone{:,2:2:26} = -kps_phone{:,2:2:26};
 %% Time sync
 % select key joint for syncing keypoints
-var = 'right_wrist';
+var = 'left_wrist';
 
 % Time sync correction
-phonesync = -0.9342;   % Enter time difference here  (Pilot3_louis = 0.9342)
-kps_phone.time = kps_phone.time + phonesync;
+% phonesync = -2;   % Enter time difference here  (Pilot3_louis = 0.9342)
+% kps_phone.time = kps_phone.time + phonesync;
 
-figure(1)
+figure('Name','(1) Time sync - Key point')
 scatter(kps_kinect.time, eval(strcat('kps_kinect.', var, '_x')),'M','x','MarkerEdgeColor',[0 .7 0],'LineWidth',1.5)
 hold on
 scatter(kps_phone.time, eval(strcat('kps_phone.', var,'_x')))
 
 %% Calibration _ Part 1 (Selecting key frames)
 % select key frame for syncing keypoints in space
-t = '25.';
+t = '3.';
 idx_k = regexp(string(kps_kinect.time), regexptranslate('wildcard', strcat(t,'*')));
 idx_p = regexp(string(kps_phone.time), regexptranslate('wildcard', strcat(t,'*')));
-
 idx_k = find(~cellfun(@isempty,idx_k));
 idx_p = find(~cellfun(@isempty,idx_p));
 
-skeletonk_x = table2array(kps_kinect(idx_k,2:2:26));
-skeletonk_y = table2array(kps_kinect(idx_k,3:2:27));
-skeletonp_x = table2array(kps_phone(idx_p,2:2:26)) + 1980;  %manually added 1980 to have skeleton in the same frame
-skeletonp_y = table2array(kps_phone(idx_p,3:2:27)) + 1500;  %manually added 1500 to have skeleton in the same frame
+skeletonk_x = table2array(kps_kinect(idx_k(1:30),2:2:26)) + 1500;
+skeletonk_y = table2array(kps_kinect(idx_k(1:30),3:2:27)) + 1500;
+skeletonp_x = table2array(kps_phone(idx_p(1:30),2:2:26)) + 1500;  
+skeletonp_y = table2array(kps_phone(idx_p(1:30),3:2:27)) + 1500;  %manually translate 1500
 
-figure(2)
+figure('Name','(2) Selected key timeframes')
 scatter(skeletonk_x, skeletonk_y, 'M','x','MarkerEdgeColor',[0 .7 0],'LineWidth',1.5)
 hold on
 scatter(skeletonp_x, skeletonp_y)
 
-%% Calibration _ Part 2 (Scale correction)
+%% Calibration _ Part 2 (Scaling)
 % Calculate x scale difference using distance between ankle
 KinectAnkledist = abs(median(skeletonk_x(:,13)) - median(skeletonk_x(:,12)));
 PhoneAnkledist = abs(median(skeletonp_x(:,13)) - median(skeletonp_x(:,12)));
@@ -52,7 +55,7 @@ KinectBodyheight = abs(median(skeletonk_y(:,3)) - median(skeletonk_y(:,13)));
 PhoneBodyheight = abs(median(skeletonp_y(:,3)) - median(skeletonp_y(:,13)));
 scale_y = PhoneBodyheight / KinectBodyheight;
 
-% Rescale Kinect bodyframe to fit RGB bodyframe
+% % Rescale Kinect bodyframe to fit RGB bodyframe
 kps_kinect_scaled = kps_kinect;
 kps_kinect_scaled{:,2:2:26} = kps_kinect_scaled{:,2:2:26}.* scale_x;
 kps_kinect_scaled{:,3:2:27} = kps_kinect_scaled{:,3:2:27}.* scale_y;
@@ -60,21 +63,31 @@ kps_kinect_scaled{:,3:2:27} = kps_kinect_scaled{:,3:2:27}.* scale_y;
 skeletonk_x_scaled = skeletonk_x.* scale_x;
 skeletonk_y_scaled = skeletonk_y.* scale_y;
 
-figure(3)
+% --
+figure('Name','(3) Scaling - Key timeframes')
 scatter(skeletonk_x_scaled, skeletonk_y_scaled, 'M','x')
 hold on
 scatter(skeletonp_x, skeletonp_y)
 
-%% Calibrate & anchor the kps using left ankle location
+% --
+figure('Name','(3) Scaling- Full timeseries')
+scatter(kps_kinect_scaled{:,2:2:26},kps_kinect_scaled{:,3:2:27},'M','x')
+hold on
+scatter(kps_phone{:,2:2:26},kps_phone{:,3:2:27})
+
+%% Calibration _ Part 3 (Translation)
 leftankleK_loc = [median(skeletonk_x_scaled(:,13)), median(skeletonk_y_scaled(:,13))];
 leftankleP_loc = [median(skeletonp_x(:,13)), median(skeletonp_y(:,13))];
 cali= leftankleP_loc - leftankleK_loc;
 
 kps_kinect_cali = kps_kinect_scaled;
-kps_kinect_cali.left_ankle_x = kps_kinect_cali.left_ankle_x *2;
-kps_kinect_cali.left_ankle_y = kps_kinect_cali.left_ankle_y *2;
-kps_kinect_cali{:,2:2:26} = (kps_kinect_cali{:,2:2:26} + cali(1) - 2034)*0.891;
-kps_kinect_cali{:,3:2:27} = kps_kinect_cali{:,3:2:27} + cali(2) - 1500;
+% kps_kinect_cali.left_ankle_x = kps_kinect_cali.left_ankle_x *2;
+% kps_kinect_cali.left_ankle_y = kps_kinect_cali.left_ankle_y *2;
+% kps_kinect_cali{:,2:2:26} = (kps_kinect_cali{:,2:2:26} + cali(1) - 2034)*0.891;
+% kps_kinect_cali{:,3:2:27} = kps_kinect_cali{:,3:2:27} + cali(2) - 1500;
+
+kps_kinect_cali{:,2:2:26} = kps_kinect_cali{:,2:2:26} + cali(1);
+kps_kinect_cali{:,3:2:27} = kps_kinect_cali{:,3:2:27} + cali(2);
 
 % X_AmpK = max(eval(strcat('kps_kinect_cali.', var, '_x')))-min((eval(strcat('kps_kinect_cali.', var, '_x'))));
 % X_AmpP = max(eval(strcat('kps_phone.', var, '_x')))-min(eval(strcat('kps_phone.', var, '_x')));
@@ -83,7 +96,8 @@ kps_kinect_cali{:,3:2:27} = kps_kinect_cali{:,3:2:27} + cali(2) - 1500;
 skeletonk_x_cali = skeletonk_x_scaled + cali(1);
 skeletonk_y_cali = skeletonk_y_scaled + cali(2);
 
-figure(4)
+% --
+figure('Name','(4) Translation - Key timeframes')
 title('Kinect & Mediapipe Overlay')
 scatter(skeletonk_x_cali,skeletonk_y_cali, 'M','x')
 hold on
@@ -91,9 +105,17 @@ scatter(skeletonp_x,skeletonp_y)
 xlim([-200 1980]);
 ylim([-200 1280]);
 
+% --
+figure('Name','(4) Translation - Full timeseries')
+scatter(kps_kinect_cali{:,2:2:26},kps_kinect_cali{:,3:2:27},'M','x')
+hold on
+scatter(kps_phone{1:930,2:2:26},kps_phone{1:930,3:2:27})
+xlim([-200 1980]);
+ylim([-200 1280]);
+
 
 %%
-figure(5)   
+figure(7)   
 scatter(kps_kinect_cali.time, eval(strcat('kps_kinect_cali.', var, '_x')),'M','x')
 hold on
 scatter(kps_phone.time, eval(strcat('kps_phone.', var,'_x')))
@@ -223,3 +245,18 @@ plot(kps_kinect_cali.time,kps_kinect_cali.right_ankle_y,'DisplayName','right ank
 plot(kps_kinect_cali.time,kps_kinect_cali.left_ankle_x,'DisplayName','left ankle_x');
 plot(kps_kinect_cali.time,kps_kinect_cali.left_ankle_y,'DisplayName','left ankle_y');
 hold off;
+
+%% Calculate difference TEST
+
+kps_diff = eval(kps_kinect{:,:})- kps_phone{:,:};
+
+
+%% TEST
+
+
+leftankleK_loc = [median(kps_kinect_cali.left_ankle_x), median(kps_kinect_cali.left_ankle_y)];
+leftankleP_loc = [median(kps_phone.left_ankle_x), median(kps_phone.left_ankle_y)];
+cali= leftankleP_loc - leftankleK_loc;
+
+kps_kinect_cali{:,2:2:26} = kps_kinect_cali{:,2:2:26} - cali(1);
+kps_kinect_cali{:,3:2:27} = kps_kinect_cali{:,3:2:27} + 169.33;
