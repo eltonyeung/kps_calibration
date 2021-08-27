@@ -366,19 +366,22 @@ plot(kps_phone.time,kps_phone.right_knee_x,'DisplayName','kps_phone.right_knee_x
 plot(kps_phone.time,kps_phone.left_knee_x,'DisplayName','kps_phone.left_knee_x');
 plot(kps_phone.time,kps_phone.right_ankle_x,'DisplayName','kps_phone.right_ankle_x');
 plot(kps_phone.time,kps_phone.left_ankle_x,'DisplayName','kps_phone.left_ankle_x');
-plot(kps_kinect_cali.time,kps_kinect_cali.head_x,'DisplayName','head_x');
-plot(kps_kinect_cali.time,kps_kinect_cali.right_shoulder_x,'DisplayName','right shoulder_x');
-plot(kps_kinect_cali.time,kps_kinect_cali.left_shoulder_x,'DisplayName','left shoulder_x');
-plot(kps_kinect_cali.time,kps_kinect_cali.right_elbow_x,'DisplayName','right elbow_x');
-plot(kps_kinect_cali.time,kps_kinect_cali.left_elbow_x,'DisplayName','left elbow_x');
-plot(kps_kinect_cali.time,kps_kinect_cali.right_wrist_x,'DisplayName','right wrist_x');
-plot(kps_kinect_cali.time,kps_kinect_cali.left_wrist_x,'DisplayName','left wrist_x');
-plot(kps_kinect_cali.time,kps_kinect_cali.right_hip_x,'DisplayName','right hip_x');
-plot(kps_kinect_cali.time,kps_kinect_cali.left_hip_x,'DisplayName','left hip_x');
-plot(kps_kinect_cali.time,kps_kinect_cali.right_knee_x,'DisplayName','right knee_x');
-plot(kps_kinect_cali.time,kps_kinect_cali.left_knee_x,'DisplayName','left knee_x');
-plot(kps_kinect_cali.time,kps_kinect_cali.right_ankle_x,'DisplayName','right ankle_x');
-plot(kps_kinect_cali.time,kps_kinect_cali.left_ankle_x,'DisplayName','left ankle_x');
+
+figure()
+plot(kps_kinect.time,kps_kinect.head_x,'DisplayName','head_x');
+hold on
+plot(kps_kinect.time,kps_kinect.right_shoulder_x,'DisplayName','right shoulder_x');
+plot(kps_kinect.time,kps_kinect.left_shoulder_x,'DisplayName','left shoulder_x');
+plot(kps_kinect.time,kps_kinect.right_elbow_x,'DisplayName','right elbow_x');
+plot(kps_kinect.time,kps_kinect.left_elbow_x,'DisplayName','left elbow_x');
+plot(kps_kinect.time,kps_kinect.right_wrist_x,'DisplayName','right wrist_x');
+plot(kps_kinect.time,kps_kinect.left_wrist_x,'DisplayName','left wrist_x');
+plot(kps_kinect.time,kps_kinect.right_hip_x,'DisplayName','right hip_x');
+plot(kps_kinect.time,kps_kinect.left_hip_x,'DisplayName','left hip_x');
+plot(kps_kinect.time,kps_kinect.right_knee_x,'DisplayName','right knee_x');
+plot(kps_kinect.time,kps_kinect.left_knee_x,'DisplayName','left knee_x');
+plot(kps_kinect.time,kps_kinect.right_ankle_x,'DisplayName','right ankle_x');
+plot(kps_kinect.time,kps_kinect.left_ankle_x,'DisplayName','left ankle_x');
 hold off;
 
 %% 
