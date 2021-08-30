@@ -9,6 +9,13 @@ subject_ID = 'Pilot5_front'
 kps_kinect = readtable(strcat('D:\SmartRehab\Data_Keypoints\', subject_ID , '_kinect_kps.xlsx'));
 kps_phone = readtable(strcat('D:\SmartRehab\Data_Keypoints\', subject_ID, '_phone(mediapipe)_kps.xlsx'));
 
+% Construct timeseries using interpolation methods:
+interpol = 'linear';
+
+% For exporting timetable files
+tspath = strcat('D:\\SmartRehab\\Data_Keypoints\\', subject_ID,'_ts_cube_', interpol ,'.csv');
+
+% Preprocessing 
 kps_phone(:,[1,3])=[]; % remove irrelevant variables (imagename)
 kps_phone.Properties.VariableNames{'idx'} = 'time';
 kps_phone.time = kps_phone.time/30; % convert frame# to milliseconds (30fps)
@@ -66,8 +73,8 @@ ts_kinect = table2timetable(kps_kinect,'RowTimes',seconds(kps_kinect{:,1}));
 
 
 % ======== Change data input & timetable sync method here =========
-% 
-ts_cube = synchronize(ts_phone, ts_kinect,'Union','linear');
+% Linear interpolation 
+ts_cube = synchronize(ts_phone, ts_kinect,'Union',interpol);
 
 %% Visualization (ts_cube)
 % =========== KPs & Data Selection ===========
@@ -98,27 +105,8 @@ xlabel('Time (s)');
 ylabel('Pixel');
 legend({strcat('Mediapipe ',KP1), strcat('Mediapipe ',KP2), strcat('KinectV2 ', KP1), strcat('KinectV2 ', KP2)},'Location','Northeast')
 
-%% Correlation Analysis
+%% Save ts_cube file 
 
-% Breakdown data cube into correpsonding cubes
-ts_Kcube = ts_cube(:,29:54);
-ts_Pcube = ts_cube(:,2:27);
-
-% [R,P,RL,RU] = corrcoef(eval(strcat('ts_cube.',ts_cube.Properties.VariableNames{1})), eval(strcat('ts_cube.',ts_cube.Properties.VariableNames{2})));
-
-for i = 1:length(ts_Kcube.Properties.VariableNames)
-
-[R,P,RL,RU] = corrcoef(eval(strcat('ts_Kcube.',ts_Kcube.Properties.VariableNames{i})), eval(strcat('ts_Pcube.',ts_Pcube.Properties.VariableNames{i})));
-
-corrMat.Var(i) = ts_Kcube.Properties.VariableNames(i);
-corrMat.R(i) = R(2);
-corrMat.RU(i) = RU(2);
-corrMat.RL(i) = RL(2);
-corrMat.P(i) = P(2);
-end
-
-corrMat.Sig = corrMat.P <= 0.05;
-
-
-%% RMSE Analysis
+writetimetable(ts_cube,tspath)
+fprintf(strcat('Successfully saved ts_cube file into: ', tspath))
 
