@@ -1,6 +1,90 @@
-% Correlation 
+% >>>>>>>>>>>>>>>>>>>>>>>>>>>>  Data Analysis <<<<<<<<<<<<<<<<<<<<<<<<<<<
+% Requires ts_cube input from "ks_timeseries.m" !!!!!  
+% Perform analysis on similarity & agreement between Kinect & Mediapipe readings
 
-% Visualize ALL KINECT timeseries 
+%% Config
+clear 
+
+% =========== ts Cube selection ===========
+subject_ID = 'Pilot5_front'
+interpol = 'linear'
+% ==================================
+
+% Import kps data file
+ts_cube = readtable(strcat('D:/SmartRehab/Data_Keypoints/', subject_ID,'_ts_cube_', interpol ,'.csv'));
+ts_cube.Time = str2double(cellfun(@(S) S(1:end-4), ts_cube.Time, 'Uniform', 0));
+
+% Breakdown data cube into correpsonding cubes
+ts_P = table2timetable(ts_cube(:,3:28),'RowTimes',seconds(ts_cube.Time));
+ts_K = table2timetable(ts_cube(:,30:55),'RowTimes',seconds(ts_cube.Time));
+
+cube_P = ts_cube(:,2:28);
+cube_K = ts_cube(:,29:55);
+
+
+%% Correlation 
+
+for i = 1:length(ts_K.Properties.VariableNames)
+
+[R,P,RL,RU] = corrcoef(eval(strcat('ts_K.',ts_K.Properties.VariableNames{i})),...
+    eval(strcat('ts_P.',ts_P.Properties.VariableNames{i})));
+
+corrMat.Var(i) = ts_K.Properties.VariableNames(i);
+corrMat.R(i) = R(2);
+corrMat.RU(i) = RU(2);
+corrMat.RL(i) = RL(2);
+corrMat.P(i) = P(2);
+end
+
+clear R P RL RU 
+
+% Ver 2
+
+[R,P] = corr(cube_K,cube_P);
+
+
+% for i = 1:length(ts_Kcube.Properties.VariableNames)
+%     
+%     if corrMat.P(i) > 0.005 && corrMat.P(i) <= 0.05
+%         corrMat.Sig(i) = 1;
+%         
+%     elseif corrMat.P(i) > 0.001 && corrMat.P(i) <= 0.005
+%         corrMat.Sig(i) = 2;
+%         
+%     elseif corrMat.P(i) <= 0.001       
+%                 corrMat.Sig(i) = 3;
+%         else 
+%             corrMat.Sig(i) = 0;
+%             end
+% end
+% 
+
+
+%% RMSE Analysis
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%% % Visualize ALL KINECT timeseries 
 
 TimeVar = eval(strcat(x,'.time'));
 
